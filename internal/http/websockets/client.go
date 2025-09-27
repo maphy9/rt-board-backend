@@ -29,7 +29,7 @@ func (c *Client) readMessages() {
 	}()
 
 	for {
-		messageType, payload, err := c.conn.ReadMessage()
+		_, payload, err := c.conn.ReadMessage()
 
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
@@ -37,10 +37,11 @@ func (c *Client) readMessages() {
 			}
 			break
 		}
-		log.Println("messageType: ", messageType)
-		log.Println("Payload: ", string(payload))
 
 		for client := range c.manager.clients {
+			if client == c {
+				continue
+			}
 			client.messageChannel <- []byte(payload)
 		}
 	}
@@ -50,12 +51,12 @@ func (c *Client) writeMessages() {
 	defer func() {
 		c.manager.removeClient(c)
 		log.Println("Connection closed")
-		}()
+	}()
 		
-		for message := range c.messageChannel {
-			writer, err := c.conn.NextWriter(websocket.TextMessage)
-			if err != nil {
-				return
+	for message := range c.messageChannel {
+		writer, err := c.conn.NextWriter(websocket.TextMessage)
+		if err != nil {
+			return
 		}
 		writer.Write(message)
 
