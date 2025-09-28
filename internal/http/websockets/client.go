@@ -38,11 +38,12 @@ func (c *Client) readMessages() {
 			break
 		}
 
+		bytesPayload := []byte(payload)
 		for client := range c.manager.clients {
 			if client == c {
 				continue
 			}
-			client.messageChannel <- []byte(payload)
+			client.messageChannel <- bytesPayload 
 		}
 	}
 }
