@@ -18,7 +18,7 @@ func newClient(conn *websocket.Conn, manager *Manager) *Client {
 	return &Client{
 		conn: conn,
 		manager: manager,
-		messageChannel: make(chan []byte),
+		messageChannel: make(chan []byte, 256),
 	}
 }
 
@@ -43,7 +43,7 @@ func (c *Client) readMessages() {
 			if client == c {
 				continue
 			}
-			client.messageChannel <- bytesPayload 
+			client.messageChannel <- bytesPayload
 		}
 	}
 }
@@ -57,12 +57,12 @@ func (c *Client) writeMessages() {
 	for message := range c.messageChannel {
 		writer, err := c.conn.NextWriter(websocket.TextMessage)
 		if err != nil {
-			return
+			break
 		}
 		writer.Write(message)
 
 		if err := writer.Close(); err != nil {
-			return
+			break
 		}
 	}
 }
